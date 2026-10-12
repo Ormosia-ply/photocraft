@@ -91,6 +91,7 @@ pub mod gpu_status;
 pub mod gradient_ui;
 pub mod guide_layout_ui;
 pub mod hold_keys;
+pub mod huelet;
 pub mod i18n;
 mod icon_data;
 pub mod icons;

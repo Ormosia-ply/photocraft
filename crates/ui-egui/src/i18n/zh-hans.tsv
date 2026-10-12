@@ -2652,3 +2652,17 @@ curves	Smooth	平滑
 	Light Red	浅红色
 	Medium Blue	中蓝色
 	Light Gray	浅灰色
+
+# Huelet native panel
+	Add Swatch	添加色板
+	Color Harmony	配色关系
+	Linked	联动
+	Panel Options	面板选项
+	Recent Colors	最近颜色
+	Switch Colors	交换颜色
+	Huelet	Huelet
+	Analogous	邻近色
+	Complementary	互补色
+	Split Complementary	分裂互补色
+	Triadic	三角色
+	Tetradic	矩形四色

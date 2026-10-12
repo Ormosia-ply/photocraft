@@ -218,6 +218,7 @@ pub fn load(app: &mut PhotocraftApp) {
     crate::brush_picker::restore(app);
     sync_rulers(app);
     crate::tool_memory::restore(app);
+    crate::huelet::restore(app);
     app.sync_recent();
     app.prefs_rt.saved_rev = app.session.prefs.rev();
     app.prefs_rt.saved_value = Some(app.session.prefs_value());
@@ -420,6 +421,7 @@ pub fn tick(app: &mut PhotocraftApp, ctx: &egui::Context) {
     sync_appearance(app, ctx);
     crate::theme::set_ui_font_size(ctx, app.session.prefs().interface.ui_font_size);
     presets_store(app);
+    crate::huelet::persist(app, ctx);
     sync_tooltips(app, ctx);
     sync_animations(app, ctx);
     app.sync_recent();

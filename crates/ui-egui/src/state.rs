@@ -1167,6 +1167,8 @@ pub struct UiState {
     /// Which chip the Color panel edits.
     #[serde(default)]
     pub color_panel: ColorPanelState,
+    #[serde(default)]
+    pub huelet: crate::huelet::State,
     /// Brush Settings: selected section (0 = Brush Tip Shape) and tab (0 settings, 1 Brushes).
     #[serde(default)]
     pub brush_section: usize,
@@ -1285,6 +1287,7 @@ impl Default for UiState {
             docking_collapsed: Vec::new(),
             docking_reveal: None,
             color_panel: Default::default(),
+            huelet: Default::default(),
             brush_section: 0,
             brush_tab: 0,
             brushes_panel: Default::default(),

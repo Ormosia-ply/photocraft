@@ -12,6 +12,7 @@ const PANELS: &[(&str, &str, Group)] = &[
     ("swatches", "Swatches", Group::Color),
     ("gradients", "Gradients", Group::Color),
     ("patterns", "Patterns", Group::Color),
+    ("huelet", "Huelet", Group::Color),
     ("properties", "Properties", Group::Properties),
     ("adjustments", "Adjustments", Group::Properties),
     ("character", "Character", Group::Character),
@@ -162,6 +163,13 @@ fn placement(params: &Value) -> Result<Placement<String>, String> {
 }
 
 pub(crate) fn command(app: &mut PhotocraftApp, id: &str, params: &Value) -> Option<Result<Value, String>> {
+    if id == "window.panel.huelet" && app.ui.docking.is_none() {
+        app.ui.dock_tabs.color = 4;
+        crate::dock::reveal(app, Group::Color);
+        app.ui.panels.dock = true;
+        app.ui.dock.heights.entry(Group::Color).or_insert(520.0);
+        return Some(Ok(json!({"panel":"huelet"})));
+    }
     if id == "window.panel.group" {
         return Some(group_command(app, params));
     }
@@ -200,6 +208,13 @@ pub(crate) fn command(app: &mut PhotocraftApp, id: &str, params: &Value) -> Opti
 }
 
 pub(crate) fn checked(app: &PhotocraftApp, id: &str) -> Option<bool> {
+    if id == "window.panel.huelet" && app.ui.docking.is_none() {
+        return Some(
+            app.ui.panels.dock
+                && app.ui.panels.color
+                && app.ui.dock.visible_tabs(Group::Color, app.ui.theme.is_pro()).iter().any(|(_, name)| *name == "Huelet"),
+        );
+    }
     let layout = app.ui.docking.as_ref()?;
     let panel = id.strip_prefix("window.panel.").or_else(|| id.strip_prefix("window.toggle.")).and_then(normalize)?;
     Some(layout.contains(&panel.to_string()))

@@ -101,8 +101,8 @@ impl Group {
     pub fn tabs(self, pro: bool) -> &'static [&'static str] {
         match self {
             // Photoshop Essentials: Color | Swatches | Gradients | Patterns.
-            Group::Color if pro => &["Color", "Swatches", "Gradients", "Patterns"],
-            Group::Color => &["Swatches", "Color", "Gradients", "Patterns"],
+            Group::Color if pro => &["Color", "Swatches", "Gradients", "Patterns", "Huelet"],
+            Group::Color => &["Swatches", "Color", "Gradients", "Patterns", "Huelet"],
             Group::Properties => &["Properties", "Adjustments"],
             Group::Character => &["Character", "Paragraph"],
             Group::Navigator => &["Navigator", "Histogram", "Info"],
