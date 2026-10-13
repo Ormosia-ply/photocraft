@@ -357,6 +357,89 @@ fn brush_keys_can_be_rebound() {
     assert!(matches!(take_log(&h.ctx).as_slice(), [(id, Outcome::Disabled(_))] if id == "tools.increaseBrushHardness"));
 }
 
+#[test]
+fn brush_rotation_keys_update_preview_and_cursor_and_can_be_rebound() {
+    let mut h = harness();
+    h.state_mut().ui.tool = Tool::Brush;
+    h.state_mut().run("tools.setBrush", json!({"angle": 0, "roundness": 0.25, "size": 80})).unwrap();
+    put_focus(&mut h, Place::Canvas);
+    let preview = |h: &Harness<'_, PhotocraftApp>| crate::brush_preview::preview_pixels(&h.state().session.tools.brush, 120, 60, [1.0, 0.0, 0.0, 1.0]);
+    let outline = |h: &Harness<'_, PhotocraftApp>| photocraft_paint::outline::tip_outline(&h.state().session.tools.brush, true).unwrap();
+    let before_preview = preview(&h);
+    let before_outline = outline(&h);
+    press(&mut h, "ArrowLeft");
+    assert_eq!(h.state().session.tools.brush.angle, 1.0, "left turns counterclockwise in Y-up brush space");
+    press(&mut h, "ArrowRight");
+    assert_eq!(h.state().session.tools.brush.angle, 0.0);
+    press(&mut h, "Shift+ArrowRight");
+    assert_eq!(h.state().session.tools.brush.angle, -15.0);
+    press(&mut h, "Shift+ArrowLeft");
+    for _ in 0..6 {
+        press(&mut h, "Shift+ArrowLeft");
+    }
+    assert_eq!(h.state().session.tools.brush.angle, 90.0);
+    assert_ne!(preview(&h), before_preview, "the preview follows the session brush angle");
+    assert_ne!(outline(&h), before_outline, "the cursor footprint follows the session brush angle");
+
+    let items = crate::prefs_ui::shortcut_items(h.state());
+    for spec in photocraft_engine::brush_angle_cmds::specs() {
+        let item = items.iter().find(|item| item.0 == spec.id).expect("rotation is listed under Tools");
+        assert_eq!(item.2, vec!["Tools".to_string()]);
+        assert_eq!(item.3.as_deref(), spec.shortcut);
+    }
+    h.state_mut().run("edit.keyboardShortcuts", json!({"set": {"tools.rotateBrushClockwise": "Alt+W"}})).unwrap();
+    press(&mut h, "ArrowRight");
+    assert_eq!(h.state().session.tools.brush.angle, 90.0, "the old binding is released");
+    press(&mut h, "Alt+W");
+    assert_eq!(h.state().session.tools.brush.angle, 89.0);
+}
+
+#[test]
+fn brush_rotation_keys_respect_text_and_widget_focus_and_other_tools() {
+    let mut h = harness();
+    h.state_mut().ui.tool = Tool::Brush;
+    for place in [Place::OpacityField, Place::FocusedWidget] {
+        put_focus(&mut h, place);
+        let angle = h.state().session.tools.brush.angle;
+        take_log(&h.ctx);
+        press(&mut h, "ArrowLeft");
+        press(&mut h, "Shift+ArrowRight");
+        assert_eq!(h.state().session.tools.brush.angle, angle, "{place:?} owns its arrow keys");
+        assert!(take_log(&h.ctx).is_empty());
+    }
+    for tool in [Tool::Move, Tool::RectMarquee, Tool::Type, Tool::Hand, Tool::Crop] {
+        h.state_mut().ui.tool = tool;
+        assert!(bindings(h.state()).iter().all(|(id, _)| !photocraft_engine::brush_angle_cmds::is_rotation_command(id)), "{tool:?}");
+    }
+    for tool in [Tool::Brush, Tool::Eraser, Tool::CloneStamp] {
+        h.state_mut().ui.tool = tool;
+        assert_eq!(bindings(h.state()).iter().filter(|(id, _)| photocraft_engine::brush_angle_cmds::is_rotation_command(id)).count(), 4);
+    }
+}
+
+#[test]
+fn arrow_keys_still_nudge_with_move_and_free_transform() {
+    let mut h = harness();
+    h.state_mut().run("select.deselect", json!({})).unwrap();
+    h.state_mut().ui.tool = Tool::Move;
+    put_focus(&mut h, Place::Canvas);
+    let angle = h.state().session.tools.brush.angle;
+    let journal_len = h.state().session.journal.len();
+    press(&mut h, "ArrowRight");
+    assert!(h.state().session.journal.len() > journal_len, "Move still nudges the selected layer");
+    assert_eq!(h.state().session.tools.brush.angle, angle);
+
+    let ctx = h.ctx.clone();
+    crate::menus::invoke(h.state_mut(), &ctx, "edit.freeTransform", json!({})).unwrap();
+    // A transform keeps the arrows even if the selected tool is still the Brush.
+    h.state_mut().ui.tool = Tool::Brush;
+    let before = h.state().ui.transform.as_ref().unwrap().quad;
+    press(&mut h, "Shift+ArrowLeft");
+    let after = h.state().ui.transform.as_ref().unwrap().quad;
+    assert_eq!(after, before.map(|p| [p[0] - 10.0, p[1]]));
+    assert_eq!(h.state().session.tools.brush.angle, angle);
+}
+
 /// Bytes the app saved, newest last.
 type Saved = std::rc::Rc<std::cell::RefCell<Vec<Vec<u8>>>>;
 

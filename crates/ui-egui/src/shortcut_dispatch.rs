@@ -62,7 +62,11 @@ pub fn bindings(app: &PhotocraftApp) -> Vec<(String, KeyboardShortcut)> {
             })
     };
     let ui = crate::menus::UI_COMMANDS.iter().map(|(id, _, _, sc)| (*id, if aliased(id, *sc) { None } else { prefs.shortcut(id, *sc) }));
-    let engine = photocraft_engine::command_specs().iter().map(|c| (c.id, prefs.shortcut(c.id, c.shortcut)));
+    // Arrow keys rotate only brush tips; other tools retain their navigation and nudge keys.
+    let engine = photocraft_engine::command_specs()
+        .iter()
+        .filter(|c| !photocraft_engine::brush_angle_cmds::is_rotation_command(c.id) || app.ui.tool.is_brushlike())
+        .map(|c| (c.id, prefs.shortcut(c.id, c.shortcut)));
     let own: std::collections::HashSet<&str> = crate::menus::UI_COMMANDS
         .iter()
         .map(|c| c.0)

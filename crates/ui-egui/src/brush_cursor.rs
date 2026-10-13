@@ -140,6 +140,19 @@ mod tests {
     }
 
     #[test]
+    fn rotating_the_session_brush_invalidates_the_cached_cursor_outline() {
+        let ctx = egui::Context::default();
+        let mut session = photocraft_engine::Session::new();
+        session.execute("tools.setBrush", serde_json::json!({"size": 80, "roundness": 0.25})).unwrap();
+        let before = rings(&ctx, &session.tools.brush, true).unwrap();
+        session.execute("tools.rotateBrushClockwise15", serde_json::json!({})).unwrap();
+        let after = rings(&ctx, &session.tools.brush, true).unwrap();
+        assert_ne!(*before, *after);
+        assert_eq!(*after, photocraft_paint::outline::tip_outline(&session.tools.brush, true).unwrap());
+        assert!(Arc::ptr_eq(&after, &rings(&ctx, &session.tools.brush, true).unwrap()), "the updated outline is cached");
+    }
+
+    #[test]
     fn builtin_shaped_tips_have_a_cursor_outline() {
         let ctx = egui::Context::default();
         for preset in photocraft_paint::presets::builtin() {
